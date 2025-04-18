@@ -2,7 +2,8 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxLengthValidator
 import datetime
 from decimal import Decimal
-
+from django.utils import timezone
+# from utils.flags import potential_performance_flag
 STRATEGY_CHOICES = [
     ('Long/Short Equity', 'Long/Short Equity'),
     ('Global Macro', 'Global Macro'),
@@ -36,8 +37,17 @@ class Fund(models.Model):
 
     inception_date = models.DateField(
         help_text="Inception date of the fund (format: YYYY-MM-DD).",
-        default=datetime.date.today()
+        default=timezone.localdate  # probably causes localisation issues
     )
 
     def __str__(self):
         return f"{self.name} ({self.strategy})"
+
+# #    @potential_performance_flag
+#     def save(self, *args, **kwargs):
+#         # The assumption is that perfomance is not an issue.
+#         # overwrites save so data is always validated.
+
+#         self.full_clean()
+#         super().save(*args, **kwargs)
+#         n
