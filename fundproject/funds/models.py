@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxLengthValidator
-import datetime
 from decimal import Decimal
 from django.utils import timezone
 # from utils.flags import potential_performance_flag
@@ -8,6 +7,13 @@ STRATEGY_CHOICES = [
     ('Long/Short Equity', 'Long/Short Equity'),
     ('Global Macro', 'Global Macro'),
     ('Arbitrage', 'Arbitrage'),
+    ("Event-Driven", "Event-Driven"),
+    ("Quantitative", "Quantitative"),
+    ("Distressed Securities", "Distressed Securities"),
+    ("Multi-Strategy", "Multi-Strategy"),
+    ("Credit", "Credit"),
+    ("Fixed Income Arbitrage", "Fixed Income Arbitrage"),
+    ("Market Neutral", "Market Neutral"),
 ]  # If strategy choices needs to be limited to a finite set.
 
 
@@ -23,7 +29,7 @@ class Fund(models.Model):
 
     strategy = models.CharField(
         max_length=50,
-        # choices=STRATEGY_CHOICES,
+        choices=STRATEGY_CHOICES,  # comment out if strategies is not finite.
 
         help_text="Select a strategy from the predefined list."
     )
