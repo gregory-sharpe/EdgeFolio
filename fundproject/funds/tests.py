@@ -4,6 +4,11 @@ from decimal import Decimal
 import datetime
 from django.core.exceptions import ValidationError
 import unittest
+from django.urls import reverse  # URL path from name
+from rest_framework.test import APIClient
+from rest_framework import status
+from urllib.parse import urlencode
+# TODO add individual test suits
 
 
 class FundModelTests(TestCase):
@@ -91,11 +96,9 @@ class FundModelTests(TestCase):
             strategy="Long/Short Equity",
             aum=Decimal("2000.00")
         )
-        # before save, the default should already be set on the instance
         self.assertEqual(fund.inception_date, today_date,
                          msg=f"inception_date on instantiation was \
                             {fund.inception_date!r}, expected {today_date!r}")
-        # and of course it stays the same once saved
         fund.save()
         self.assertEqual(fund.inception_date, today_date)
 
@@ -139,3 +142,90 @@ class FundModelTests(TestCase):
             fund.save()
             dup.full_clean()
             dup.save()
+
+
+class FundAPITestCase(TestCase):
+    def setUp(self):  # runs each time for every test
+        self.client = APIClient()
+        self.fund_list = []
+        self.fund = Fund.objects.create(
+            name="Test Fund A",
+            strategy="Global Macro",
+            aum=5000000,
+            inception_date="2022-01-01"
+        )
+        self.fundb = Fund.objects.create(
+            name="Test Fund B",
+            strategy="Global Macro",
+            aum=5000000,
+            inception_date="2022-01-02"
+        )
+        self.fundc = Fund.objects.create(
+            name="Test Fund C",
+            strategy="Long/Short Equity",
+            aum=1000000,
+            inception_date="2022-01-02"
+        )
+        self.fund_list.extend([self.fund, self.fundb, self.fundc])
+
+    def test_get_fund_detail(self):
+        # Construct the URL using the fund's ID
+        url = reverse('api_fund_detail', args=[self.fund.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['id'], self.fund.id)
+        self.assertEqual(response.data['name'], self.fund.name)
+        self.assertEqual(response.data['strategy'], self.fund.strategy)
+
+    def test_get_fund_detail_Id_no_match(self):
+        url = reverse('api_fund_detail', args=[9999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_get_fund_detail_invalid_ID_Type(self):
+        # url =  # reverse('api_fund_detail', args=["ABC"])
+        response = self.client.get('/funds/api/ABC/')
+        self.assertEqual(response.status_code, 404)
+
+    def test_list_funds(self):
+        url = reverse('api_fund_list')
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(self.fund_list), len(response.data))
+
+    def test_list_funds_strategy_query(self):
+
+        url = reverse('api_fund_list')  # + '?strategy=Global Macro'
+        query_params = {'strategy': 'Global Macro'}
+        url = f"{url}?{urlencode(query_params)}"
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        global_macro_funds = [
+            fund
+            for fund in self.fund_list
+            if fund.strategy.lower() == 'global macro'
+        ]
+
+        self.assertEqual(len(response.data), len(global_macro_funds))
+        for fund in response.data:
+            self.assertEqual(fund['strategy'].lower(), 'global macro')
+
+    @unittest.skip("Optional test — uncertainty over creating \
+                   a partial match API")
+    def test_list_funds_strategy_query_partial_match(self):
+        url = reverse('api_fund_list')  # + '?strategy=Global'
+        query_param = {"strategy": "Global"}
+        url = f"{url}?{urlencode(query_param)}"
+        print(url)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        global_macro_funds = [
+            fund
+            for fund in self.fund_list
+            if fund.strategy.lower() == 'global macro'
+        ]
+
+        self.assertEqual(len(response.data), len(global_macro_funds))
+        for fund in response.data:
+            self.assertEqual(fund['strategy'].lower(), 'global macro')

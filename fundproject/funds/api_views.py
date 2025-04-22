@@ -3,11 +3,15 @@ from rest_framework import generics  # generic views and stuff
 from .models import Fund
 from .serializers import FundSerializer  # for object conversion
 # Response but better for Django HTML
-from rest_framework.response import Response
-# Decorators for API_views. Get, Post etc
-from rest_framework.decorators import api_view
-from django.db.models import Q  # for complex queries
+# for later
+# from rest_framework.response import Response
+# from rest_framework.decorators import api_view
+# from django.db.models import Q  # for complex queries
+# from rest_framework import status
+
 # List Funds (with optional filtering)
+
+# using class based views as its a common design that has been done before
 
 
 class FundListAPIView(generics.ListAPIView):

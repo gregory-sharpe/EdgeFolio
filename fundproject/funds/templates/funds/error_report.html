@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            /*align-items: center; */
+            padding-top: 50px;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8f9fa;
+        }
+
+        .table-container {
+            width: 80%;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="table-container">
+
+        <table>
+            <tr>
+                <th>Name</th>
+                <th>Strategy</th>
+                <th>AUM</th>
+                <th>Inception Date</th>
+            </tr>
+            {% for fund, error in invalid_funds_E %}
+            <tr>
+                <td style="{% if 'name' in error %}background-color: #f8d7da;{% endif %}"
+                    title="{% if 'name' in error %}{{ error.name }}{% endif %}">
+                    {{ fund.name }}
+                </td>
+                <td style="{% if 'strategy' in error %}background-color: #f8d7da;{% endif %}"
+                    title="{% if 'strategy' in error %}{{ error.strategy.0 }}{% endif %}">
+                    {{ fund.strategy }}
+                </td>
+                <td style="{% if 'aum' in error %}background-color: #f8d7da;{% endif %}"
+                    title="{% if 'aum' in error %}{{ error.aum.0 }}{% endif %}">
+                    {{ fund.aum }}
+                </td>
+                <td style="{% if 'inception_date' in error %}background-color: #f8d7da;{% endif %}"
+                    title="{% if 'inception_date' in error %}{{ error.inception_date.0 }}{% endif %}">
+                    {{ fund.inception_date }}
+                </td>
+            </tr>
+            {% endfor %}
+
+
+        </table>
+    </div>
+
+</body>
+
+</html>

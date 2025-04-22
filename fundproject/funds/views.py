@@ -1,9 +1,11 @@
 from django.shortcuts import render, redirect
-# from .forms import FundUploadForm, FundForm
+from .forms import FundUploadForm  # , FundForm
 from .models import Fund
 # from .forms import FundCSVUploadForm
 from django.db.models import Sum
 import csv
+import io
+from django.core.exceptions import ValidationError
 
 
 def fund_list(request):
@@ -26,21 +28,57 @@ def fund_list(request):
     }
     return render(request, 'funds/fund_list.html', context)
 
+# reliant on columns being exact
+
+# Views probably shouldn't be this bloated
+
 
 def upload_funds(request):
-    if request.method == 'POST' and request.FILES['csv_file']:
-        csv_file = request.FILES['csv_file']
-        data = csv_file.read().decode('utf-8').splitlines()
-        reader = csv.DictReader(data)
+    form = FundUploadForm()
 
-        for row in reader:
-            Fund.objects.create(
-                name=row['name'],
-                strategy=row['strategy'],
-                aum=float(row['aum']),
-                inception_date=row['inception_date'],
-            )
-        # Redirect back to the fund list after upload.
-        return redirect('fund_list')
+    if request.method == 'POST':
+        form = FundUploadForm(request.POST, request.FILES)
+        print("checking for valid form")
+        if form.is_valid():
+            # You can add logic to handle the file after it is validated and saved
+            # For now, we just print the cleaned data
 
-    return render(request, 'funds/upload_funds.html')
+            uploaded_file = form.cleaned_data['file']
+            decoded_file = uploaded_file.read().decode(
+                'utf-8-sig')  # -sig ignores Byte Order Mark (BOM)
+            io_string = io.StringIO(decoded_file)
+            reader = csv.DictReader(io_string)
+            # 2 Options:
+            # Bulk upload - no validation. no partial completion
+            # Validate each seperately
+            validated_funds = []
+            invalid_funds = []
+            for row in reader:
+                print("showing row")
+                print(row)
+                fund = Fund(
+                    name=row.get('Name'),
+                    strategy=row.get('Strategy'),
+                    aum=row.get('AUM (USD)'),
+                    inception_date=row.get('Inception Date')
+                )
+                try:
+                    fund.full_clean()
+                    fund.save()
+                    validated_funds.append(fund)
+                except ValidationError as e:
+                    invalid_funds.append((fund, e.message_dict))
+                    print(f"{e}: at {fund}")
+                # fund_objects.append(fund)
+            # Fund.objects.bulk_create(validated_funds)
+            print(f"Number of errors: {len(invalid_funds)}")
+            return render(request, 'funds/error_report.html',  # include a report page for the upload
+                          {
+                              'file_name': uploaded_file.name,
+                              'invalid_funds_E': invalid_funds,
+                              # all types of errors that appeard
+
+
+                          })
+
+    return render(request, 'funds/upload_funds.html', {'form': form})

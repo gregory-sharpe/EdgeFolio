@@ -3,7 +3,7 @@ from django.core.validators import MinValueValidator, MaxLengthValidator
 from decimal import Decimal
 from django.utils import timezone
 # from utils.flags import potential_performance_flag
-STRATEGY_CHOICES = [
+STRATEGY_CHOICES = [  # Should be in another file
     ('Long/Short Equity', 'Long/Short Equity'),
     ('Global Macro', 'Global Macro'),
     ('Arbitrage', 'Arbitrage'),
@@ -30,7 +30,6 @@ class Fund(models.Model):
     strategy = models.CharField(
         max_length=50,
         choices=STRATEGY_CHOICES,  # comment out if strategies is not finite.
-
         help_text="Select a strategy from the predefined list."
     )
 
@@ -40,6 +39,7 @@ class Fund(models.Model):
         validators=[MinValueValidator(Decimal('0.01'))],
         help_text="Assets Under Management (in USD). Must be a positive value."
     )
+    # TODO test for rounding errors
 
     inception_date = models.DateField(
         help_text="Inception date of the fund (format: YYYY-MM-DD).",
@@ -48,6 +48,7 @@ class Fund(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.strategy})"
+
 
 # #    @potential_performance_flag
 #     def save(self, *args, **kwargs):
